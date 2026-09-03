@@ -175,7 +175,7 @@ jobs:
               echo "     ssh ${CURRENT_USER}@${HOST} -p ${PORT}"
               echo ""
               echo "  👤 Kullanıcı: ${CURRENT_USER}"
-              echo "  🔑 Şifre: (SSH_PASS secret'ında tanımlı)"
+              echo "  🔑 Şifre: (SSH_PASS secret'ında tanımlı — varsayılan: TestSsh123!)"
               echo "  🌐 ngrok Dashboard: http://localhost:4040"
               echo ""
             else

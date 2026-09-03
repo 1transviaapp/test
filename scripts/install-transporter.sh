@@ -81,11 +81,8 @@ else
         fi
     else
         print_warning "Mac App Store'a giriş yapılmamış"
-        print_warning "mas ile yükleme yapılamıyor — CI/CD ortamlarında bu normaldir"
-        
-        # Alternatif: Eğer Transporter daha önce yüklendiyse mas purchase ile dene
-        print_info "Alternatif yükleme yöntemi deneniyor..."
-        mas install "$TRANSPORTER_APP_ID" 2>/dev/null || true
+        print_warning "mas ile CLI üzerinden otomatik yükleme yapılamıyor (CI/CD ortamlarında normaldir)"
+        print_info "VNC ile masaüstüne bağlandığınızda App Store'dan Transporter'ı indirebilir veya xcrun altool kullanabilirsiniz"
     fi
 fi
 
