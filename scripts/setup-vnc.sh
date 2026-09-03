@@ -71,14 +71,12 @@ print_info "macOS Screen Sharing etkinleştiriliyor..."
 KICKSTART="/System/Library/CoreServices/RemoteManagement/ARDAgent.app/Contents/Resources/kickstart"
 
 if [ -f "$KICKSTART" ]; then
-    # Remote Management'ı etkinleştir
-    sudo "$KICKSTART" -activate -configure \
-        -allowAccessFor -allUsers \
-        -privs -all \
-        -clientopts -setmenuextra -menuextra yes \
-        2>/dev/null || true
+    # Remote Management'ı ve VNC legacy modunu etkinleştir
+    sudo "$KICKSTART" -configure -allowAccessFor -allUsers -privs -all 2>/dev/null || true
+    sudo "$KICKSTART" -configure -clientopts -setvnclegacy -vnclegacy yes -setvncpw -vncpw "${VNC_PASSWORD}" 2>/dev/null || true
+    sudo "$KICKSTART" -activate -restart -agent -console 2>/dev/null || true
     
-    print_status "Remote Management etkinleştirildi"
+    print_status "Remote Management ve VNC servisi etkinleştirildi"
 else
     print_warning "kickstart bulunamadı, Screen Sharing servisi deneniyor..."
     

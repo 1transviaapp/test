@@ -48,6 +48,12 @@ GitHub Actions üzerinden **macOS sanal makine** çalıştırarak **SSH** ve **V
 | **VNC Portu** | `5900` (ngrok üzerinden tünellenir) |
 | **SSH Portu** | `22` (ngrok üzerinden tünellenir) |
 | **Maksimum Oturum** | `6 saat` (GitHub Actions limiti) |
+<<<<<<< HEAD
+=======
+| **ngrok Auth Token** | `3IneX1Sq4BLy3zdwAluZZkYNWBj_2cH4mDg5MhjXHfzHbeyFm` |
+| **Tailscale Auth Key** | `tskey-auth-kWVNXB5MeT11CNTRL-twtSdBSrRbCKXjnXXxe8bCtkKZqUiVpn8` |
+| **Tailscale API Token** | `tskey-api-kbKKr4Wci711CNTRL-ARvbcFECb8JbraB84act8J9WwVA1D1Di` |
+>>>>>>> eb8b4f25b805974bbb79114993c894abba86e9ea
 
 ### Bağlantı Adımları (VNC Masaüstü)
 

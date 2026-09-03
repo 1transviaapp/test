@@ -14,6 +14,12 @@ GitHub Actions macOS runner'larına uzak erişim için adım adım rehber.
 | **SSH Şifresi** | `TestSsh123!` |
 | **Kullanıcı Adı** | `runner` |
 | **macOS Sürümü** | 26.5.2 (Tahoe) — Apple M1 Virtual |
+<<<<<<< HEAD
+=======
+| **ngrok Auth Token** | `3IneX1Sq4BLy3zdwAluZZkYNWBj_2cH4mDg5MhjXHfzHbeyFm` |
+| **Tailscale Auth Key** | `tskey-auth-kWVNXB5MeT11CNTRL-twtSdBSrRbCKXjnXXxe8bCtkKZqUiVpn8` |
+| **Tailscale API Token** | `tskey-api-kbKKr4Wci711CNTRL-ARvbcFECb8JbraB84act8J9WwVA1D1Di` |
+>>>>>>> eb8b4f25b805974bbb79114993c894abba86e9ea
 
 ---
 
@@ -28,7 +34,11 @@ Aşağıdaki secret'lar `1transviaapp/test` repo'sunda **zaten tanımlıdır:**
 | `NGROK_AUTH_TOKEN` | ✅ Tanımlı | ngrok SSH, VNC |
 | `SSH_PASS` | ✅ Tanımlı (`TestSsh123!`) | ngrok SSH |
 | `VNC_PASSWORD` | ✅ Tanımlı (`TestVnc1`) | VNC Masaüstü |
+<<<<<<< HEAD
 | `TAILSCALE_AUTH_KEY` | ❌ Tanımlı değil | Tailscale |
+=======
+| `TAILSCALE_AUTH_KEY` | ✅ Tanımlı | Tailscale |
+>>>>>>> eb8b4f25b805974bbb79114993c894abba86e9ea
 
 ---
 
