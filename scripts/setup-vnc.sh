@@ -157,7 +157,7 @@ for i in {1..10}; do
 done
 
 # ============================================================================
-# 6. Bağlantı Bilgileri
+# 6. Bağlantı Bilgileri (ngrok veya Pinggy Fallback)
 # ============================================================================
 echo ""
 echo "============================================"
@@ -169,36 +169,64 @@ if [ -n "$TUNNEL_URL" ]; then
     # tcp://X.tcp.ngrok.io:XXXXX formatından adresi ayıkla
     VNC_HOST=$(echo "$TUNNEL_URL" | sed 's|tcp://||')
     
-    print_status "VNC Adresi: ${VNC_HOST}"
+    print_status "VNC Adresi (ngrok): ${VNC_HOST}"
     echo ""
     echo -e "${CYAN}  Bağlantı Yöntemleri:${NC}"
     echo ""
-    echo "  🍎 macOS: Finder → ⌘+K → vnc://${VNC_HOST}"
     echo "  🪟 Windows: RealVNC/TightVNC → ${VNC_HOST}"
+    echo "  🍎 macOS: Finder → ⌘+K → vnc://${VNC_HOST}"
     echo "  🐧 Linux: Remmina → VNC → ${VNC_HOST}"
     echo ""
     echo "  👤 Kullanıcı: ${CURRENT_USER}"
     echo "  🔑 Şifre: ${VNC_PASSWORD}"
     echo ""
     print_info "ngrok PID: ${NGROK_PID}"
-    print_info "ngrok Dashboard: http://localhost:4040"
 else
-    print_error "ngrok tünel URL'si alınamadı!"
-    print_info "ngrok loglarını kontrol edin: cat /tmp/ngrok_vnc.log"
+    print_warning "ngrok tüneli başlatılamadı. ngrok hata detayı:"
+    cat /tmp/ngrok_vnc.log 2>/dev/null || true
+    echo ""
+    
+    # ── Pinggy Fallback (Hesap / Kredi Kartı GEREKTİRMEZ) ──
+    print_info "Alternatif kartsız TCP tüneli (Pinggy) başlatılıyor..."
+    
+    ssh -p 443 -R0:127.0.0.1:5900 -o StrictHostKeyChecking=no -o ServerAliveInterval=30 tcp@a.pinggy.io > /tmp/pinggy_vnc.log 2>&1 &
+    PINGGY_PID=$!
+    
+    sleep 8
+    
+    # Pinggy çıktısından tcp:// linkini ayıkla
+    PINGGY_URL=$(grep -oE "tcp://[a-zA-Z0-9.-]+:[0-9]+" /tmp/pinggy_vnc.log 2>/dev/null | head -n 1 || true)
+    
+    if [ -n "$PINGGY_URL" ]; then
+        PINGGY_HOST=$(echo "$PINGGY_URL" | sed 's|tcp://||')
+        print_status "VNC Adresi (Pinggy): ${PINGGY_HOST}"
+        echo ""
+        echo -e "${CYAN}  Bağlantı Yöntemleri:${NC}"
+        echo ""
+        echo "  🪟 Windows: RealVNC/TightVNC → ${PINGGY_HOST}"
+        echo "  🍎 macOS: Finder → ⌘+K → vnc://${PINGGY_HOST}"
+        echo "  🐧 Linux: Remmina → VNC → ${PINGGY_HOST}"
+        echo ""
+        echo "  👤 Kullanıcı: ${CURRENT_USER}"
+        echo "  🔑 Şifre: ${VNC_PASSWORD}"
+        echo ""
+        print_info "Pinggy PID: ${PINGGY_PID}"
+        NGROK_PID=$PINGGY_PID
+    else
+        print_error "Pinggy tüneli de alınamadı! Pinggy logu:"
+        cat /tmp/pinggy_vnc.log 2>/dev/null || true
+    fi
 fi
 
 echo ""
-print_warning "Bağlantıyı sonlandırmak için: kill ${NGROK_PID}"
 echo "============================================"
-
-# Oturumu canlı tut
-print_info "VNC oturumu aktif — sonlandırmak için Ctrl+C"
+print_info "VNC oturumu aktif — sonlandırmak için workflow'u iptal edin"
 echo ""
 
 # Sonsuz döngü ile oturumu canlı tut
 while true; do
     if ! kill -0 "$NGROK_PID" 2>/dev/null; then
-        print_error "ngrok sonlandı!"
+        print_error "Tünel servisi sonlandı!"
         exit 1
     fi
     sleep 30
