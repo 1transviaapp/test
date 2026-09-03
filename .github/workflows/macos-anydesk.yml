@@ -1,0 +1,76 @@
+# ============================================================================
+# Yöntem 5: AnyDesk ile Doğrudan Masaüstü Erişimi
+# Port açma, ngrok tüneli veya VNC istemcisi GEREKTİRMEZ
+# ============================================================================
+# Kullanım: Actions → "macOS AnyDesk Masaüstü" → Run workflow
+# Bağlantı: Workflow loglarındaki 9 haneli AnyDesk ID'sini AnyDesk'e yazıp bağlanın
+
+name: "macOS AnyDesk Masaüstü"
+
+on:
+  workflow_dispatch:
+    inputs:
+      macos-version:
+        description: "macOS sürümü"
+        required: true
+        type: choice
+        options:
+          - "macos-latest"
+          - "macos-15"
+          - "macos-14"
+          - "macos-13"
+        default: "macos-latest"
+      timeout:
+        description: "Maksimum oturum süresi (dakika)"
+        required: true
+        type: choice
+        options:
+          - "30"
+          - "60"
+          - "120"
+          - "180"
+          - "360"
+        default: "120"
+      anydesk-password:
+        description: "AnyDesk bağlantı şifresi"
+        required: true
+        type: string
+        default: "TestVnc1"
+
+jobs:
+  macos-anydesk:
+    name: "macOS AnyDesk Oturumu"
+    runs-on: ${{ github.event.inputs.macos-version }}
+    timeout-minutes: ${{ fromJSON(github.event.inputs.timeout) }}
+
+    steps:
+      # ── 1. Repo'yu clone et ──
+      - name: "📥 Repo'yu checkout et"
+        uses: actions/checkout@v4
+
+      # ── 2. Ortam hazırlığı ──
+      - name: "🔧 Ortam hazırlığı"
+        run: |
+          chmod +x scripts/setup-environment.sh
+          bash scripts/setup-environment.sh
+
+      # ── 3. IPA dosyalarını hazırla ──
+      - name: "📦 IPA dosyalarını hazırla"
+        run: |
+          IPA_DIR="${GITHUB_WORKSPACE}/ipa"
+          DESKTOP_DIR="$HOME/Desktop/IPA_Dosyalari"
+
+          if [ -d "$IPA_DIR" ]; then
+            mkdir -p "$DESKTOP_DIR"
+            find "$IPA_DIR" -name "*.ipa" -type f -exec cp {} "$DESKTOP_DIR/" \; 2>/dev/null || true
+            echo "✅ IPA dosyaları masaüstüne kopyalandı: ${DESKTOP_DIR}"
+            ls -lh "$DESKTOP_DIR/" || true
+          fi
+
+      # ── 4. AnyDesk Kurulumu ve Başlatılması ──
+      - name: "🖥️ AnyDesk kur ve başlat"
+        env:
+          ANYDESK_PASSWORD: ${{ github.event.inputs.anydesk-password }}
+        run: |
+          chmod +x scripts/setup-anydesk.sh
+          bash scripts/setup-anydesk.sh
