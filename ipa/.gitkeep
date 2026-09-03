@@ -1,0 +1,3 @@
+# IPA Dosyaları Klasörü
+# .ipa dosyalarınızı bu klasöre yerleştirin.
+# Workflow çalıştığında bu dosyalar macOS runner'a otomatik aktarılacaktır.

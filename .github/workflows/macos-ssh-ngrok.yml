@@ -1,0 +1,204 @@
+# ============================================================================
+# Yöntem 2: ngrok ile SSH Erişimi
+# Şifre korumalı SSH bağlantısı — ngrok hesabı gerektirir
+# ============================================================================
+# Gerekli Secrets:
+#   - NGROK_AUTH_TOKEN : ngrok dashboard'dan alınır
+#   - SSH_PASS         : SSH bağlantı şifresi (kendiniz belirleyin)
+#
+# Kullanım: Actions → "macOS SSH (ngrok)" → Run workflow
+
+name: "macOS SSH (ngrok)"
+
+on:
+  workflow_dispatch:
+    inputs:
+      macos-version:
+        description: "macOS sürümü"
+        required: true
+        type: choice
+        options:
+          - "macos-latest"
+          - "macos-15"
+          - "macos-14"
+          - "macos-13"
+        default: "macos-latest"
+      timeout:
+        description: "Maksimum oturum süresi (dakika)"
+        required: true
+        type: choice
+        options:
+          - "30"
+          - "60"
+          - "120"
+          - "180"
+          - "360"
+        default: "120"
+      install-transporter:
+        description: "Transporter uygulamasını kur"
+        required: true
+        type: boolean
+        default: true
+
+jobs:
+  macos-ssh-ngrok:
+    name: "macOS SSH Oturumu (ngrok)"
+    runs-on: ${{ github.event.inputs.macos-version }}
+    timeout-minutes: ${{ fromJSON(github.event.inputs.timeout) }}
+
+    steps:
+      # ── 1. Repo'yu clone et (ipa/ klasörü dahil) ──
+      - name: "📥 Repo'yu checkout et"
+        uses: actions/checkout@v4
+
+      # ── 2. Ortam hazırlığı ──
+      - name: "🔧 Ortam hazırlığı"
+        run: |
+          chmod +x scripts/setup-environment.sh
+          bash scripts/setup-environment.sh
+
+      # ── 3. Transporter kurulumu (opsiyonel) ──
+      - name: "📱 Transporter kurulumu"
+        if: ${{ github.event.inputs.install-transporter == 'true' }}
+        run: |
+          chmod +x scripts/install-transporter.sh
+          bash scripts/install-transporter.sh
+
+      # ── 4. IPA dosyalarını kontrol et ──
+      - name: "📦 IPA dosyalarını kontrol et"
+        run: |
+          echo "══════════════════════════════════════"
+          echo "  IPA Dosyaları"
+          echo "══════════════════════════════════════"
+
+          IPA_DIR="${GITHUB_WORKSPACE}/ipa"
+          if [ -d "$IPA_DIR" ]; then
+            IPA_COUNT=$(find "$IPA_DIR" -name "*.ipa" -type f | wc -l | tr -d ' ')
+            echo "📂 IPA klasörü: ${IPA_DIR}"
+            echo "📦 Bulunan IPA sayısı: ${IPA_COUNT}"
+            if [ "$IPA_COUNT" -gt 0 ]; then
+              find "$IPA_DIR" -name "*.ipa" -type f -exec ls -lh {} \;
+            fi
+          else
+            echo "⚠️  ipa/ klasörü bulunamadı"
+          fi
+          echo "══════════════════════════════════════"
+
+      # ── 5. ngrok kurulumu ──
+      - name: "🌐 ngrok kurulumu"
+        run: |
+          brew install ngrok 2>/dev/null || {
+            echo "Homebrew ile kurulamadı, manuel yükleniyor..."
+            ARCH=$(uname -m)
+            if [[ "$ARCH" == "arm64" ]]; then
+              curl -fsSL https://bin.equinox.io/c/bNyj1mQVY4c/ngrok-v3-stable-darwin-arm64.zip -o /tmp/ngrok.zip
+            else
+              curl -fsSL https://bin.equinox.io/c/bNyj1mQVY4c/ngrok-v3-stable-darwin-amd64.zip -o /tmp/ngrok.zip
+            fi
+            unzip -o /tmp/ngrok.zip -d /usr/local/bin/
+            rm /tmp/ngrok.zip
+          }
+          ngrok --version
+
+      # ── 6. ngrok kimlik doğrulama ──
+      - name: "🔑 ngrok yapılandırması"
+        env:
+          NGROK_AUTH_TOKEN: ${{ secrets.NGROK_AUTH_TOKEN }}
+        run: |
+          if [ -z "$NGROK_AUTH_TOKEN" ]; then
+            echo "❌ NGROK_AUTH_TOKEN secret'ı ayarlanmamış!"
+            echo "   Settings → Secrets → Actions → New repository secret"
+            exit 1
+          fi
+          ngrok config add-authtoken "$NGROK_AUTH_TOKEN"
+          echo "✅ ngrok yapılandırıldı"
+
+      # ── 7. SSH sunucusu yapılandır ──
+      - name: "🔐 SSH sunucusu yapılandır"
+        env:
+          SSH_PASS: ${{ secrets.SSH_PASS }}
+        run: |
+          # Kullanıcı şifresini ayarla
+          if [ -z "$SSH_PASS" ]; then
+            echo "❌ SSH_PASS secret'ı ayarlanmamış!"
+            exit 1
+          fi
+
+          CURRENT_USER=$(whoami)
+          echo "${SSH_PASS}" | sudo dscl . -passwd /Users/"${CURRENT_USER}" 2>/dev/null || \
+          sudo sysadminctl -resetPasswordFor "${CURRENT_USER}" -newPassword "${SSH_PASS}" 2>/dev/null || true
+
+          # SSH servisini etkinleştir
+          sudo systemsetup -setremotelogin on 2>/dev/null || \
+          sudo launchctl load -w /System/Library/LaunchDaemons/ssh.plist 2>/dev/null || true
+
+          echo "✅ SSH sunucusu yapılandırıldı"
+          echo "   Kullanıcı: ${CURRENT_USER}"
+
+      # ── 8. ngrok TCP tüneli başlat ──
+      - name: "🚀 ngrok SSH tüneli başlat"
+        run: |
+          # ngrok'u arka planda başlat
+          ngrok tcp 22 --log=stdout > /tmp/ngrok.log 2>&1 &
+          NGROK_PID=$!
+          echo "ngrok PID: ${NGROK_PID}"
+
+          # Tünelin hazır olmasını bekle
+          sleep 8
+
+          echo ""
+          echo "══════════════════════════════════════════════"
+          echo "  🔐 SSH BAĞLANTI BİLGİLERİ"
+          echo "══════════════════════════════════════════════"
+          echo ""
+
+          # Tünel URL'sini al
+          TUNNEL_INFO=$(curl -s http://localhost:4040/api/tunnels 2>/dev/null || echo "")
+          
+          if [ -n "$TUNNEL_INFO" ]; then
+            TUNNEL_URL=$(echo "$TUNNEL_INFO" | python3 -c "
+          import sys, json
+          data = json.load(sys.stdin)
+          tunnels = data.get('tunnels', [])
+          if tunnels:
+              url = tunnels[0]['public_url'].replace('tcp://', '')
+              host, port = url.rsplit(':', 1)
+              print(f'HOST={host}')
+              print(f'PORT={port}')
+              print(f'URL={url}')
+          " 2>/dev/null || echo "")
+            
+            if [ -n "$TUNNEL_URL" ]; then
+              eval "$TUNNEL_URL"
+              CURRENT_USER=$(whoami)
+              echo "  📋 Bağlantı komutu:"
+              echo "     ssh ${CURRENT_USER}@${HOST} -p ${PORT}"
+              echo ""
+              echo "  👤 Kullanıcı: ${CURRENT_USER}"
+              echo "  🔑 Şifre: (SSH_PASS secret'ında tanımlı — varsayılan: TestSsh123!)"
+              echo "  🌐 ngrok Dashboard: http://localhost:4040"
+              echo ""
+            else
+              echo "  ⚠️  Tünel bilgisi ayrıştırılamadı"
+              echo "  📄 Log: cat /tmp/ngrok.log"
+            fi
+          else
+            echo "  ❌ ngrok API'sine erişilemedi!"
+            echo "  📄 Log: cat /tmp/ngrok.log"
+          fi
+
+          echo "══════════════════════════════════════════════"
+          echo ""
+          echo "⏳ Oturum aktif — workflow timeout'a kadar açık kalacak"
+          echo "   Timeout: ${{ github.event.inputs.timeout }} dakika"
+          echo ""
+
+          # Oturumu canlı tut
+          while true; do
+            if ! kill -0 "$NGROK_PID" 2>/dev/null; then
+              echo "❌ ngrok sonlandı!"
+              cat /tmp/ngrok.log
+              exit 1
+            fi
+            sleep 60
+          done
