@@ -2,21 +2,33 @@
 
 GitHub Actions macOS runner'larına uzak erişim için adım adım rehber.
 
+> **Repo:** `1transviaapp/test`
+
+---
+
+## 🔑 Test Ortamı Varsayılan Bilgiler
+
+| Bilgi | Değer |
+|:---|:---|
+| **VNC Şifresi** | `TestVnc1` |
+| **SSH Şifresi** | `TestSsh123!` |
+| **Kullanıcı Adı** | `runner` |
+| **macOS Sürümü** | 26.5.2 (Tahoe) — Apple M1 Virtual |
+
 ---
 
 ## 📋 Ön Hazırlık
 
-### GitHub Secrets Oluşturma
+### GitHub Secrets
 
-1. GitHub repo sayfanızda **Settings** → **Secrets and variables** → **Actions** → **New repository secret**
-2. Kullanacağınız yönteme göre aşağıdaki secret'ları ekleyin:
+Aşağıdaki secret'lar `1transviaapp/test` repo'sunda **zaten tanımlıdır:**
 
-| Secret Adı | Gerekli Yöntem | Açıklama |
+| Secret Adı | Durum | Gerekli Yöntem |
 |:---|:---|:---|
-| `NGROK_AUTH_TOKEN` | ngrok SSH, VNC | [ngrok Dashboard](https://dashboard.ngrok.com/get-started/your-authtoken)'dan alınır |
-| `SSH_PASS` | ngrok SSH | SSH bağlantı şifreniz (güçlü bir şifre belirleyin) |
-| `VNC_PASSWORD` | VNC Masaüstü | VNC şifresi (maks. 8 karakter) |
-| `TAILSCALE_AUTH_KEY` | Tailscale | [Tailscale Admin](https://login.tailscale.com/admin/settings/keys)'den alınır |
+| `NGROK_AUTH_TOKEN` | ✅ Tanımlı | ngrok SSH, VNC |
+| `SSH_PASS` | ✅ Tanımlı (`TestSsh123!`) | ngrok SSH |
+| `VNC_PASSWORD` | ✅ Tanımlı (`TestVnc1`) | VNC Masaüstü |
+| `TAILSCALE_AUTH_KEY` | ❌ Tanımlı değil | Tailscale |
 
 ---
 
@@ -47,7 +59,7 @@ GitHub Actions macOS runner'larına uzak erişim için adım adım rehber.
 
 4. **IPA dosyalarına erişin:**
    ```bash
-   ls -la ~/work/*/ipa/
+   ls -la ~/work/test/test/ipa/
    ```
 
 ---
@@ -79,7 +91,7 @@ GitHub Actions macOS runner'larına uzak erişim için adım adım rehber.
 3. **Bağlanın:**
    ```bash
    ssh runner@X.tcp.ngrok.io -p XXXXX
-   # Şifre: SSH_PASS secret'ınız
+   # Şifre: TestSsh123!
    ```
 
 ---
@@ -112,7 +124,7 @@ GitHub Actions macOS runner'larına uzak erişim için adım adım rehber.
 3. **Bağlanın:**
    - macOS: Finder → ⌘+K → `vnc://X.tcp.ngrok.io:XXXXX`
    - Windows: RealVNC Viewer → `X.tcp.ngrok.io:XXXXX`
-   - Şifre: `VNC_PASSWORD` secret'ınız
+   - Şifre: `TestVnc1`
 
 4. **Masaüstünde:**
    - IPA dosyaları **Desktop/IPA_Dosyalari/** klasöründe
@@ -222,7 +234,7 @@ git push
 
 | Yöntem | IPA Yolu |
 |:---|:---|
-| **Tümü** | `~/work/<repo-adı>/<repo-adı>/ipa/` |
+| **Tümü** | `~/work/test/test/ipa/` |
 | **VNC (masaüstüne kopyalanmışsa)** | `~/Desktop/IPA_Dosyalari/` |
 
 ---

@@ -140,11 +140,11 @@ VNC_PORT=5900
 print_info "ngrok TCP tüneli başlatılıyor (port ${VNC_PORT})..."
 
 # ngrok'u arka planda başlat
-ngrok tcp "$VNC_PORT" --log=stdout --log-format=json > /tmp/ngrok_vnc.log 2>&1 &
+ngrok tcp "$VNC_PORT" --log=stdout > /tmp/ngrok_vnc.log 2>&1 &
 NGROK_PID=$!
 
 # ngrok'un başlamasını bekle
-sleep 5
+sleep 8
 
 # Tünel URL'sini al
 TUNNEL_URL=""
@@ -180,7 +180,7 @@ if [ -n "$TUNNEL_URL" ]; then
     echo "  🐧 Linux: Remmina → VNC → ${VNC_HOST}"
     echo ""
     echo "  👤 Kullanıcı: ${CURRENT_USER}"
-    echo "  🔑 Şifre: (VNC_PASSWORD secret'ında tanımlı)"
+    echo "  🔑 Şifre: ${VNC_PASSWORD}"
     echo ""
     print_info "ngrok PID: ${NGROK_PID}"
     print_info "ngrok Dashboard: http://localhost:4040"

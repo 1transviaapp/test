@@ -87,7 +87,7 @@ for pkg in "${BREW_PACKAGES[@]}"; do
         print_status "${pkg} zaten yüklü"
     else
         print_info "${pkg} kuruluyor..."
-        brew install "$pkg" --quiet
+        brew install --quiet "$pkg"
         print_status "${pkg} kuruldu"
     fi
 done
