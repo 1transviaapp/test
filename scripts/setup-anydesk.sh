@@ -79,7 +79,8 @@ print_status "Güvenlik izinleri uygulandı"
 # 3. AnyDesk Servisini Başlat
 # ============================================================================
 print_info "AnyDesk başlatılıyor..."
-open -a AnyDesk
+open "/Applications/AnyDesk.app" 2>/dev/null || true
+nohup "/Applications/AnyDesk.app/Contents/MacOS/AnyDesk" --service >/dev/null 2>&1 &
 sleep 6
 
 # ============================================================================
