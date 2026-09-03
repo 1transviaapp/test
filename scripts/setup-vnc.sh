@@ -54,13 +54,12 @@ fi
 print_info "Kullanıcı şifresi ayarlanıyor..."
 
 CURRENT_USER=$(whoami)
-echo "${VNC_PASSWORD}" | sudo dscl . -passwd /Users/"${CURRENT_USER}" 2>/dev/null || {
-    # Alternatif yöntem
-    sudo sysadminctl -resetPasswordFor "${CURRENT_USER}" -newPassword "${VNC_PASSWORD}" 2>/dev/null || {
-        print_warning "Şifre ayarlanamadı, mevcut şifre kullanılacak"
+sudo dscl . -passwd /Users/"${CURRENT_USER}" "${VNC_PASSWORD}" 2>/dev/null || {
+    sudo /usr/sbin/sysadminctl -resetPasswordFor "${CURRENT_USER}" -newPassword "${VNC_PASSWORD}" 2>/dev/null || {
+        print_warning "Şifre ayarlanamadı"
     }
 }
-print_status "Kullanıcı şifresi ayarlandı"
+print_status "Kullanıcı şifresi başarıyla ayarlandı (${CURRENT_USER})"
 
 # ============================================================================
 # 3. Screen Sharing / Remote Management Etkinleştir
@@ -73,6 +72,7 @@ KICKSTART="/System/Library/CoreServices/RemoteManagement/ARDAgent.app/Contents/R
 if [ -f "$KICKSTART" ]; then
     # Remote Management'ı ve VNC legacy modunu etkinleştir
     sudo "$KICKSTART" -configure -allowAccessFor -allUsers -privs -all 2>/dev/null || true
+    sudo "$KICKSTART" -configure -users "${CURRENT_USER}" -access -on -privs -all 2>/dev/null || true
     sudo "$KICKSTART" -configure -clientopts -setvnclegacy -vnclegacy yes -setvncpw -vncpw "${VNC_PASSWORD}" 2>/dev/null || true
     sudo "$KICKSTART" -activate -restart -agent -console 2>/dev/null || true
     
